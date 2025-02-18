@@ -7,5 +7,5 @@ The telegram bot which is based on PubChem, PubMed, Wiki and etc. databases. It 
 
 ## Developers
 
-- [gregory ulyanov](https://github.com/grulyanov)
+- [GrUlyanov](https://github.com/grulyanov)
 
