@@ -54,10 +54,15 @@ def toggle_site(call):
 @bot.message_handler(func=lambda message: True)
 def handle_input(message):
     name = message.text.strip()
-    get_data(name, message)
+
+    # TODO: Добавить проверку статуса парсинга сайтов
+    user_checker.get_settings(message.chat.id)
+
+    # TODO: Парсить в зависимости от сайта
+    get_data_pubchem(name, message)
 
 
-def get_data(name, message):
+def get_data_pubchem(name, message):
     try:  # checkout for CID
         if name.isdigit():
             cid = name
