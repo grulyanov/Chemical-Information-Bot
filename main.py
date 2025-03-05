@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 
 import pubchempy as pcp
 import telebot
@@ -10,11 +11,15 @@ from config import TOKEN, URL
 user_checker = UserChecker()
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
+#Dataset reading
+
+df = pd.read_csv('iupac_high-confidence_v2_2.csv')
+
 
 # Telebot creation. Welcome handler
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
-    bot.reply_to(message, "Howdy, how are you doing? Send me a compound name or CID!\n For example, H2O or aspirin")
+    bot.reply_to(message, "Howdy, how are you doing? Send me a compound name or CID!\n For example, 2244 or aspirin")
 
 
 @bot.message_handler(commands=['settings'])
@@ -29,6 +34,7 @@ def settings(message):
             f"PubChem: {'+' if settings_current['pubchem'] else '-'}\n"
             f"Other: {'+' if settings_current['other'] else '-'}\n")
     bot.send_message(message.chat.id, text, reply_markup=markup)
+
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("toggle"))
@@ -78,23 +84,42 @@ def get_data_pubchem(name, message):
                 bot.reply_to(message, "Substance not found. 😢")
                 return
             # getting properties: smiles, photo, name, molucalar formula and etc.
+
         properties = pcp.get_properties('IsomericSMILES', cid, 'cid')
         smiles = properties[0]['IsomericSMILES'] if properties else "Not available"
         image_path = f'{cid}.png'
+        sdf_path = f'{cid}.sdf'
         pcp.download('PNG', image_path, cid, 'cid', overwrite=True)
+        pcp.download('SDF', sdf_path, cid, 'cid', overwrite= True)
 
         caption = (
-            f"Here is the: {name}\n"
             f"Molecular formula: {compound.molecular_formula}\n"
+            f'Molecular weight: {compound.molecular_weight}\n'
+            f'InChI: {compound.inchi}\n'
             f"IUPAC name: {compound.iupac_name}\n"
             f"SMILES: {smiles}\n"
-            f"PubChem Link: {URL + str(cid)}"
+            f"PubChem Link: {URL + str(cid)}\n"
         )
 
         # Image opening
         with open(image_path, 'rb') as photo:
             bot.send_photo(message.chat.id, photo, caption=caption)
         os.remove(image_path)
+        with open(sdf_path, 'rb') as molfile:
+           bot.send_document(message.chat.id, molfile)
+        os.remove(sdf_path)  # TODO: замена на временный файл (убрать os)
+        if compound.inchi in df['InChI'].values:
+            filt_df = df[df['InChI'] == compound.inchi][['pka_type', 'pka_value', 'T', 'remarks']]
+            file_path = f'{name}_pKa_values.xlsx'
+            filt_df.to_excel(file_path)
+            marker = ''
+            with open(file_path, 'rb') as file:
+                bot.send_document(message.chat.id, file)
+            os.remove(file_path)
+        else:
+            marker = 'There is no dissociation constant data for such substance'
+
+
 
     except Exception as e:
         bot.reply_to(message, f"An error occurred: {str(e)}. Please try again.")
