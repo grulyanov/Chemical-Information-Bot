@@ -11,4 +11,9 @@ def save_chat_id(chat_id):
 def get_all_chat_ids():
     cursor.execute('SELECT chat_id FROM users')
     return cursor.fetchall()
+import os
+import sys
+
+print("Путь к main.py:", sys.argv[0])
+print("Текущая папка:", os.getcwd())
 

@@ -8,6 +8,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from checker import UserChecker
 from config import TOKEN, URL
 
+data = 'data'
 user_checker = UserChecker()
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
